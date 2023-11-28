@@ -1,0 +1,40 @@
+---
+- name: Setup postgres server
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install postgres
+      apt:
+        name:
+          - postgresql-14
+          - postgresql-contrib-14
+        state: present
+
+    - name: change pg_hba for bingo1
+      lineinfile:
+        path: /etc/postgresql/14/main/pg_hba.conf
+        line: "host    all             all             10.0.0.4/32             trust"
+        create: yes
+      become: yes
+
+    - name: change pg_hba for bingo 2
+      lineinfile:
+        path: /etc/postgresql/14/main/pg_hba.conf
+        line: "host    all             all             10.0.0.5/32             trust"
+        create: yes
+      become: yes
+
+    - name: change listening address
+      ansible.builtin.replace:
+        path: /etc/postgresql/14/main/postgresql.conf
+        regexp: "^#listen_addresses = 'localhost'"
+        replace: "listen_addresses = 'localhost,10.0.0.6'"
+
+    - name: Reload PostgreSQL service
+      service:
+        name: postgresql
+        state: restarted

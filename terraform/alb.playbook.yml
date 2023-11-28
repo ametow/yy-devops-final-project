@@ -1,0 +1,50 @@
+---
+- name: Setup Nginx server
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install nginx
+      apt:
+        name:
+          - nginx
+        state: present
+
+    - name: upload ssl certificates
+      ansible.builtin.copy:
+        src: ../etc/ssl/certs/nginx-selfsigned.crt
+        dest: /etc/ssl/certs/nginx-selfsigned.crt
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: upload ssl certificates key
+      ansible.builtin.copy:
+        src: ../etc/ssl/private/nginx-selfsigned.key
+        dest: /etc/ssl/private/nginx-selfsigned.key
+        owner: root
+        group: root
+        mode: '0644'
+    - name: upload snippets
+      ansible.builtin.copy:
+        src: ../etc/nginx/snippets
+        dest: /etc/nginx
+    - name: upload dhparams
+      ansible.builtin.copy:
+        src: ../etc/nginx/dhparam.pem
+        dest: /etc/nginx/dhparam.pem
+        owner: root
+        group: root
+        mode: '0644'
+    - name: upload nginx.conf
+      ansible.builtin.copy:
+        src: ../etc/nginx/nginx.conf
+        dest: /etc/nginx/nginx.conf
+
+    - name: restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

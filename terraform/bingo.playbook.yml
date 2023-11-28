@@ -1,0 +1,77 @@
+---
+- name: Setup bingo
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+    - name: install psql
+      apt:
+        name:
+          - postgresql-client-14
+        state: present
+    
+    - name: Get bingo binary
+      copy:
+        src: ../bingo/bingo
+        dest: /usr/local/bin/bingo
+        mode: '0755'
+
+    - name: Create required folders by bingo for config
+      file:
+        path: /opt/bingo
+        state: directory
+        mode: '0744'
+        owner: ubuntu
+        group: ubuntu
+    - name: Create required folders by bingo for logs
+      file:
+        path: /opt/bongo/logs/2d311402e8/
+        state: directory
+        mode: '0744'
+        owner: ubuntu
+        group: ubuntu
+    - name: Create bingo config file
+      copy:
+        dest: /opt/bingo/config.yaml
+        src: ../bingo/config.yaml
+        owner: ubuntu
+        group: ubuntu
+        mode: '0744'
+
+    - name: Create bingo service file
+      copy:
+        dest: /etc/systemd/system/bingo.service
+        src: ../bingo/bingo.service
+        mode: '0644'
+    - name: Create bingo monitor service
+      copy:
+        dest: /etc/systemd/system/monitor_bingo.service
+        src: ../bingo/monitor_bingo.service
+        mode: '0644'
+    - name: Create bingo monitor script
+      copy:
+        dest: /opt/monitor_bingo.sh
+        src: ../bingo/monitor_bingo.sh
+        mode: '0744'
+
+    - name: Start bingo service
+      service:
+        name: bingo
+        state: started
+
+    - name: Start bingo monitor service
+      service:
+        name: monitor_bingo
+        state: started
+
+    - name: Enable service bingo
+      systemd:
+        name: bingo.service
+        enabled: yes
+
+    - name: Enable service bingo_monitor
+      systemd:
+        name: monitor_bingo.service
+        enabled: yes
