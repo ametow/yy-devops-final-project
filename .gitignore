@@ -25,4 +25,4 @@ darwin_arm64
 terraform/key.json
 terraform/.terraform
 terraform/.terraform.*
-terraform/terraform.tfstate*
+terraform/terraform.*
