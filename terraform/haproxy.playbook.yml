@@ -1,0 +1,90 @@
+---
+- name: Setup haproxy server
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install dependencies
+      apt:
+        name:
+          - varnish
+          - ca-certificates
+          - gcc
+          - git
+          - libc6-dev
+          - liblua5.3-dev
+          - libpcre3-dev
+          - libssl-dev
+          - libsystemd-dev
+          - make
+          - zlib1g-dev
+        state: present
+    
+    - name: install quictls
+      ansible.builtin.shell:
+        cmd: |
+          git clone https://github.com/quictls/openssl && cd openssl && git checkout OpenSSL_1_1_1t+quic && mkdir -p /opt/quictls && \
+          ./config --libdir=lib --prefix=/opt/quictls && make && make install
+
+    - name: install haproxy
+      ansible.builtin.shell:
+        cmd: |
+          git clone https://github.com/haproxy/haproxy.git && \
+          cd haproxy && git checkout v2.7.0 && \
+          make TARGET=linux-glibc \
+            USE_LUA=1 \
+            USE_PCRE=1 \
+            USE_ZLIB=1 \
+            USE_SYSTEMD=1 \
+            USE_PROMEX=1 \
+            USE_QUIC=1 \
+            USE_OPENSSL=1 \
+            SSL_INC=/opt/quictls/include \
+            SSL_LIB=/opt/quictls/lib \
+            LDFLAGS="-Wl,-rpath,/opt/quictls/lib" && \
+          make install-bin && cd admin/systemd && make haproxy.service && \
+          cp ./haproxy.service /etc/systemd/system/ && \
+          mkdir -p /etc/haproxy && mkdir -p /run/haproxy && mkdir -p /var/lib/haproxy && \
+          touch /etc/haproxy/haproxy.cfg && \
+          systemctl enable haproxy && systemctl start haproxy
+    - name: copy varnish conf
+      ansible.builtin.copy:
+        src: ../etc/varnish/default.vcl
+        dest: /etc/varnish/default.vcl
+    - name: copy haproxy conf
+      ansible.builtin.copy:
+        src: ../etc/haproxy/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+    
+    - name: create tls certs
+      ansible.builtin.shell:
+        cmd: |
+          openssl req -newkey rsa:2048 -nodes -x509 -days 365 -keyout haproxy.key -out haproxy.crt -subj "/CN=HAPROXY_SSL_SERVER_CERT_CN" && \
+          cat haproxy.crt haproxy.key >> /etc/ssl/certs/haproxy.pem
+    
+    - name: install unified-agent
+      ansible.builtin.shell:
+        cmd: |
+          bash -c 'curl -s -O https://storage.yandexcloud.net/yc-unified-agent/releases/23.11.02/deb/ubuntu-20.04-focal/yandex-unified-agent_23.11.02_amd64.deb' && \
+          dpkg -i yandex-unified-agent_23.11.02_amd64.deb
+
+    - name: copy unified agent config.yml
+      ansible.builtin.copy:
+        src: ../etc/yandex/unified_agent/config.yml
+        dest: /etc/yandex/unified_agent/config.yml
+
+    - name: Reload varnish services
+      service:
+        name: varnish
+        state: restarted
+    - name: Reload haproxy services
+      service:
+        name: haproxy
+        state: restarted
+    - name: Reload unified agent service
+      service:
+        name: unified-agent
+        state: restarted

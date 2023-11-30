@@ -22,7 +22,7 @@ go.work
 
 darwin_arm64
 
-key.json
-.terraform
-.terraform.*
-terraform.tfstate*
+terraform/key.json
+terraform/.terraform
+terraform/.terraform.*
+terraform/terraform.tfstate*
