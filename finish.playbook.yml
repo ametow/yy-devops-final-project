@@ -13,9 +13,3 @@
     - name: Create index for customers
       ansible.builtin.command:
         cmd: psql -h 10.0.0.6 -U postgres -c 'create index on customers(id);'
-    # - name: Increase timeout time
-    #   ansible.builtin.command:
-    #     cmd: psql -h 10.0.0.6 -U postgres -c 'set statement_timeout=60000;'
-    - name: Reload pg_conf
-      ansible.builtin.command:
-        cmd: psql -h 10.0.0.6 -U postgres -c 'select pg_reload_conf();'

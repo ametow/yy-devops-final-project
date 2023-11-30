@@ -20,7 +20,9 @@
 # Go workspace file
 go.work
 
-terraform/key.json
-terraform/.terraform
-terraform/.terraform.*
-terraform/terraform.tfstate*
+darwin_arm64
+
+key.json
+.terraform
+.terraform.*
+terraform.tfstate*

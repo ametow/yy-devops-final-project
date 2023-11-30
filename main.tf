@@ -206,7 +206,7 @@ resource "yandex_compute_instance" "alb" {
   }
 
   provisioner "local-exec" {
-    command = "sleep 60 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa alb.playbook.yml"
+    command = "sleep 60 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa haproxy.playbook.yml"
   }
 
   provisioner "local-exec" {

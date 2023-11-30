@@ -1,0 +1,54 @@
+---
+- name: Setup haproxy server
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install haproxy, varnish
+      apt:
+        name:
+          - haproxy
+          - varnish
+        state: present
+
+    - name: copy varnish conf
+      ansible.builtin.copy:
+        src: ./etc/varnish/default.vcl
+        dest: /etc/varnish/default.vcl
+    - name: copy haproxy conf
+      ansible.builtin.copy:
+        src: ./etc/haproxy/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+    
+    - name: create tls certs
+      ansible.builtin.shell:
+        cmd: |
+          openssl req -newkey rsa:2048 -nodes -x509 -days 365 -keyout haproxy.key -out haproxy.crt -subj "/CN=HAPROXY_SSL_SERVER_CERT_CN" && \
+          cat haproxy.crt haproxy.key >> /etc/ssl/certs/haproxy.pem
+    
+    - name: install unified-agent
+      ansible.builtin.shell:
+        cmd: |
+          ubuntu_name="ubuntu-20.04-focal" ua_version=$(curl -s https://storage.yandexcloud.net/yc-unified-agent/latest-version) bash -c 'curl -s -O https://storage.yandexcloud.net/yc-unified-agent/releases/${ua_version}/deb/${ubuntu_name}/yandex-unified-agent_${ua_version}_amd64.deb' && \
+          dpkg -i yandex-unified-agent_${ua_version}_amd64.deb
+
+    - name: copy unified agent config.yml
+      ansible.builtin.copy:
+        src: ./etc/yandex/unified_agent/config.yml
+        dest: /etc/yandex/unified_agent/config.yml
+
+    - name: Reload varnish services
+      service:
+        name: varnish
+        state: restarted
+    - name: Reload haproxy services
+      service:
+        name: haproxy
+        state: restarted
+    - name: Reload unified agent service
+      service:
+        name: unified-agent
+        state: restarted
