@@ -62,8 +62,8 @@
     - name: create tls certs
       ansible.builtin.shell:
         cmd: |
-          openssl req -newkey rsa:2048 -nodes -x509 -days 365 -keyout haproxy.key -out haproxy.crt -subj "/CN=HAPROXY_SSL_SERVER_CERT_CN" && \
-          cat haproxy.crt haproxy.key >> /etc/ssl/certs/haproxy.pem
+          openssl req -newkey rsa:2048 -nodes -x509 -days 365 -keyout haproxy.key -out haproxy.crt -subj "/CN={{ansible_ssh_host}}" && \
+          cat haproxy.crt haproxy.key >> /etc/ssl/certs/haproxy.pem && rm haproxy.*
     
     - name: install unified-agent
       ansible.builtin.shell:
