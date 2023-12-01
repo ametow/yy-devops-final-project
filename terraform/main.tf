@@ -126,6 +126,9 @@ resource "yandex_compute_instance" "bingo1" {
   provisioner "local-exec" {
     command = "sleep 60 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa bingo.playbook.yml"
   }
+  provisioner "local-exec" {
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa migration.playbook.yml"
+  }
 }
 
 # Bingo VM2
@@ -175,7 +178,7 @@ resource "yandex_compute_instance" "alb" {
   zone = "ru-central1-a"
   platform_id        = "standard-v2"
   service_account_id = yandex_iam_service_account.service-accounts["bingo-sa"].id
-  depends_on = [ yandex_compute_instance.bingo1, yandex_compute_instance.bingo2, yandex_compute_instance.db ]
+  # depends_on = [ yandex_compute_instance.bingo2, yandex_compute_instance.db ]
 
   resources {
     cores         = 2
@@ -207,9 +210,5 @@ resource "yandex_compute_instance" "alb" {
 
   provisioner "local-exec" {
     command = "sleep 60 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa haproxy.playbook.yml"
-  }
-
-  provisioner "local-exec" {
-    command = "sleep 60 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${yandex_compute_instance.bingo1.network_interface.0.nat_ip_address},' --private-key ~/.ssh/id_rsa finish.playbook.yml"
   }
 }
