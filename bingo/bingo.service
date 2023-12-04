@@ -3,6 +3,7 @@ Description=Bingo service
 After=network.target
 
 [Service]
+OOMScoreAdjust=-100
 ExecStart=/usr/local/bin/bingo run_server
 Restart=always
 Type=simple
